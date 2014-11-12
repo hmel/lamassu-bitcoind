@@ -9,6 +9,7 @@ exports.NAME = 'Bitcoind';
 exports.SUPPORTED_MODULES = ['wallet'];
 
 var SATOSHI_FACTOR = 1e8;
+var TRANSACTION_COUNT = 100;  // Number of transactions to fetch when looking for last tx
 
 var rpc = null;
 var pluginConfig = {
@@ -105,3 +106,42 @@ exports.sendBitcoins = function sendBitcoins(address, satoshis, fee, callback) {
     callback(null, result.result);
   });
 };
+
+exports.newAddress = function newAddress(info, callback) {
+  rpc.getNewAddress(function(err, result) {
+    if (err) return callback(err);
+    console.dir(result);
+    callback(null, result.result);
+  });
+};
+
+/*
+
+function btcToSatoshi(btc) {
+  return Math.round(1e8 * value);
+}
+
+
+Holding off on this, because there's no easy way to get incoming tx fees in bitcoind
+
+function pullLastTx(txs) {
+  var tx = _.find(txs, {category: 'receive', address: address});
+  var result = {
+    tsReceived: tx.timereceived,
+    amount: btcToSatoshi(tx.amount);
+    txHash: tx.txid,
+    fees: null
+  }
+}
+
+exports.getAddressLastTx = function getAddressLastTx(address, callback) {
+  rpc.listTransactions(pluginConfig.account, TRANSACTION_COUNT, function(err, result) {
+    if (err) return callback(err);
+    callback(null, pullLastTx(result.result, address));
+  });
+};
+
+*/
+
+
+

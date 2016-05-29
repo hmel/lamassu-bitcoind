@@ -20,8 +20,6 @@
     "url": "https://github.com/lamassu/lamassu-bitcoind/issues"
   },
   "devDependencies": {
-    "chai": "^1.9.1",
-    "mocha": "^1.21.4"
   },
   "dependencies": {
     "async": "~0.2.10",

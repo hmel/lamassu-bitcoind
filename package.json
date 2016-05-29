@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "async": "~0.2.10",
-    "lodash": "^2.4.1",
-    "bitcore": "~0.1.18"
+    "bitcoind-rpc": "^0.6.0",
+    "lodash": "^2.4.1"
   }
 }

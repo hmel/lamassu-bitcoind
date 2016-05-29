@@ -1,6 +1,6 @@
 'use strict';
 
-var RpcClient = require('bitcore').RpcClient;
+var RpcClient = require('bitcoind-rpc');
 var fs        = require('fs');
 var _         = require('lodash');
 
@@ -142,6 +142,3 @@ exports.getAddressLastTx = function getAddressLastTx(address, callback) {
 };
 
 */
-
-
-

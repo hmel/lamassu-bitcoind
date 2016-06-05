@@ -3,6 +3,8 @@
 var RpcClient = require('bitcoind-rpc')
 var fs = require('fs')
 var _ = require('lodash')
+var BigNumber = require('bignumber.js')
+var pify = require('pify')
 
 exports.NAME = 'Bitcoind'
 exports.SUPPORTED_MODULES = ['wallet']
@@ -108,29 +110,23 @@ exports.newAddress = function newAddress (info, callback) {
   })
 }
 
-/*
+const balance = (address, confs) => pify(rpc.getReceivedByAddress(address, confs))
+.then(bitcoins => new BigNumber(bitcoins).times(1e8))
 
-function btcToSatoshi(btc) {
-  return Math.round(1e8 * value)
-}
+const confirmedBalance = address => balance(address, 1)
+const pendingBalance = address => balance(address, 0)
 
-Holding off on this, because there's no easy way to get incoming tx fees in bitcoind
+// This new call uses promises. We're in the process of upgrading everything.
+exports.getStatus = function getStatus (toAddress, requested) {
+  return confirmedBalance(toAddress)
+  .then(confirmed => {
+    if (confirmed.gte(requested)) return {status: 'confirmed'}
 
-function pullLastTx(txs) {
-  var tx = _.find(txs, {category: 'receive', address: address})
-  var result = {
-    tsReceived: tx.timereceived,
-    amount: btcToSatoshi(tx.amount)
-    txHash: tx.txid,
-    fees: null
-  }
-}
-
-exports.getAddressLastTx = function getAddressLastTx(address, callback) {
-  rpc.listTransactions(pluginConfig.account, TRANSACTION_COUNT, function(err, result) {
-    if (err) return callback(err)
-    callback(null, pullLastTx(result.result, address))
+    return pendingBalance(toAddress)
+    .then(pending => {
+      if (pending.gte(requested)) return {status: 'published'}
+      if (pending.gt(0)) return {status: 'insufficientFunds'}
+      return {status: 'notSeen'}
+    })
   })
 }
-
-*/

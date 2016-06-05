@@ -1,26 +1,26 @@
 'use strict'
 
-var RpcClient = require('bitcoind-rpc')
-var fs = require('fs')
-var _ = require('lodash')
-var BigNumber = require('bignumber.js')
-var pify = require('pify')
+const RpcClient = require('bitcoind-rpc')
+const fs = require('fs')
+const _ = require('lodash')
+const BigNumber = require('bignumber.js')
+const pify = require('pify')
 
 exports.NAME = 'Bitcoind'
 exports.SUPPORTED_MODULES = ['wallet']
 
-var SATOSHI_FACTOR = 1e8
+const SATOSHI_FACTOR = 1e8
 
-var rpc = null
-var pluginConfig = {
+let rpc = null
+const pluginConfig = {
   account: ''
 }
 
 // TODO: should it happen only once per run, or with each .config() call?
 function initRpc () {
-  var bitcoindConf = parseConf(pluginConfig.bitcoindConfigurationPath)
+  const bitcoindConf = parseConf(pluginConfig.bitcoindConfigurationPath)
 
-  var rpcConfig = {
+  const rpcConfig = {
     protocol: 'http',
     user: bitcoindConf.rpcuser,
     pass: bitcoindConf.rpcpassword
@@ -38,7 +38,7 @@ exports.config = function config (localConfig) {
 }
 
 function richError (msg, name) {
-  var err = new Error(msg)
+  const err = new Error(msg)
   err.name = name
   return err
 }
@@ -47,12 +47,12 @@ function richError (msg, name) {
  * initialize RpcClient
  */
 function parseConf (confPath) {
-  var conf = fs.readFileSync(confPath)
-  var lines = conf.toString().split('\n')
+  const conf = fs.readFileSync(confPath)
+  const lines = conf.toString().split('\n')
 
-  var res = {}
-  for (var i = 0; i < lines.length; i++) {
-    var keyVal = lines[i].split('=')
+  const res = {}
+  for (let i = 0; i < lines.length; i++) {
+    const keyVal = lines[i].split('=')
 
     // skip when value is empty
     if (!keyVal[1]) continue
@@ -66,7 +66,7 @@ function parseConf (confPath) {
 // We want a balance that includes all spends (0 conf) but only deposits that
 // have at least 1 confirmation. getbalance does this for us automatically.
 exports.balance = function balance (callback) {
-  rpc.getBalance(pluginConfig.account, 1, function (err, result) {
+  rpc.getBalance(pluginConfig.account, 1, (err, result) => {
     if (err) return callback(err)
 
     if (result.error) {
@@ -80,11 +80,11 @@ exports.balance = function balance (callback) {
 }
 
 exports.sendBitcoins = function sendBitcoins (address, satoshis, fee, callback) {
-  var confirmations = 1
-  var bitcoins = (satoshis / SATOSHI_FACTOR).toFixed(8)
+  const confirmations = 1
+  const bitcoins = (satoshis / SATOSHI_FACTOR).toFixed(8)
 
   console.log('bitcoins: %s', bitcoins)
-  rpc.sendFrom(pluginConfig.account, address, bitcoins, confirmations, function (err, result) {
+  rpc.sendFrom(pluginConfig.account, address, bitcoins, confirmations, (err, result) => {
     if (err) {
       if (err.code === -6) {
         return callback(richError('Insufficient funds', 'InsufficientFunds'))
@@ -103,7 +103,7 @@ exports.sendBitcoins = function sendBitcoins (address, satoshis, fee, callback) 
 }
 
 exports.newAddress = function newAddress (info, callback) {
-  rpc.getNewAddress(function (err, result) {
+  rpc.getNewAddress((err, result) => {
     if (err) return callback(err)
     console.dir(result)
     callback(null, result.result)
@@ -119,14 +119,14 @@ const pendingBalance = address => balance(address, 0)
 // This new call uses promises. We're in the process of upgrading everything.
 exports.getStatus = function getStatus (toAddress, requested) {
   return confirmedBalance(toAddress)
-  .then(confirmed => {
-    if (confirmed.gte(requested)) return {status: 'confirmed'}
+    .then(confirmed => {
+      if (confirmed.gte(requested)) return {status: 'confirmed'}
 
-    return pendingBalance(toAddress)
-    .then(pending => {
-      if (pending.gte(requested)) return {status: 'published'}
-      if (pending.gt(0)) return {status: 'insufficientFunds'}
-      return {status: 'notSeen'}
+      return pendingBalance(toAddress)
+        .then(pending => {
+          if (pending.gte(requested)) return {status: 'published'}
+          if (pending.gt(0)) return {status: 'insufficientFunds'}
+          return {status: 'notSeen'}
+        })
     })
-  })
 }

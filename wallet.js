@@ -110,8 +110,8 @@ exports.newAddress = function newAddress (info, callback) {
   })
 }
 
-const balance = (address, confs) => pify(rpc.getReceivedByAddress(address, confs))
-.then(bitcoins => new BigNumber(bitcoins).times(1e8))
+const balance = (address, confs) => pify(rpc.getReceivedByAddress.bind(rpc))(address, confs)
+.then(r => new BigNumber(r.result).times(1e8).truncated())
 
 const confirmedBalance = address => balance(address, 1)
 const pendingBalance = address => balance(address, 0)
@@ -119,14 +119,14 @@ const pendingBalance = address => balance(address, 0)
 // This new call uses promises. We're in the process of upgrading everything.
 exports.getStatus = function getStatus (toAddress, requested) {
   return confirmedBalance(toAddress)
-    .then(confirmed => {
-      if (confirmed.gte(requested)) return {status: 'confirmed'}
+  .then(confirmed => {
+    if (confirmed.gte(requested)) return {status: 'confirmed'}
 
-      return pendingBalance(toAddress)
-        .then(pending => {
-          if (pending.gte(requested)) return {status: 'published'}
-          if (pending.gt(0)) return {status: 'insufficientFunds'}
-          return {status: 'notSeen'}
-        })
+    return pendingBalance(toAddress)
+    .then(pending => {
+      if (pending.gte(requested)) return {status: 'authorized'}
+      if (pending.gt(0)) return {status: 'insufficientFunds'}
+      return {status: 'notSeen'}
     })
+  })
 }
